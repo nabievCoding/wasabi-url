@@ -17,20 +17,23 @@ exports.handler = async (event) => {
     if (!fileName) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ success: false, error: "fileName kerak" }),
+        body: JSON.stringify({
+          success: false,
+          error: "fileName kerak",
+        }),
       };
     }
 
-    const key = `uploads/${Date.now()}-${fileName}`;
+    const key = `uploads/${fileName}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.WASABI_BUCKET_NAME,
       Key: key,
-      ACL: "public-read", // faylni hammaga ko‘rinadigan qilish
+      ACL: "public-read", // ommaga ochiq qilib qo‘yadi
       ContentType: "application/octet-stream",
     });
 
-    // 60 soniyaga amal qiladigan presigned URL
+    // 60 soniya amal qiladigan upload URL
     const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
 
     return {
@@ -38,13 +41,4 @@ exports.handler = async (event) => {
       body: JSON.stringify({
         success: true,
         uploadUrl,
-        fileUrl: `https://${process.env.WASABI_BUCKET_NAME}.s3.ap-southeast-1.wasabisys.com/${key}`,
-      }),
-    };
-  } catch (err) {
-    return {
-      statusCode: 500,
-      body: JSON.stringify({ success: false, error: err.message }),
-    };
-  }
-};
+        fileUrl: `https://${process.env.WASABI_BUCKET_NAME}.s
