@@ -1,15 +1,35 @@
-import AWS from 'aws-sdk'
+// netlify/functions/upload.js
+const AWS = require('aws-sdk');
 
-exports.handler = async (event) => {
-  // Faqat POST so'rovlarni qabul qilamiz
+exports.handler = async (event, context) => {
+  // CORS sozlamalari
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS'
+  };
+
+  // OPTIONS so'rovini qayta ishlash (CORS uchun)
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
+  }
+
+  // Faqat POST so'rovlarni qabul qilish
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
+      headers,
       body: JSON.stringify({ error: 'Faqat POST so\'rovlar qabul qilinadi' })
     };
   }
 
   try {
+    console.log('Function ishga tushdi...');
+
     // Wasabi sozlamalari
     const s3 = new AWS.S3({
       endpoint: 'https://s3.ap-northeast-2.wasabisys.com',
@@ -18,31 +38,52 @@ exports.handler = async (event) => {
       region: process.env.WASABI_REGION || 'ap-northeast-2'
     });
 
-    const { fileName, fileData, fileType } = JSON.parse(event.body);
+    // JSON ma'lumotlarini o'qish
+    let body;
+    try {
+      body = JSON.parse(event.body);
+    } catch (parseError) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'Noto\'g\'ri JSON formati' })
+      };
+    }
 
-    // Base64 dan buffer ga o'tkazamiz
+    const { fileName, fileData, fileType } = body;
+
+    // Majburiy maydonlarni tekshirish
+    if (!fileName || !fileData) {
+      return {
+        statusCode: 400,
+        headers,
+        body: JSON.stringify({ error: 'fileName va fileData majburiy' })
+      };
+    }
+
+    // Base64 dan buffer ga o'tkazish
     const buffer = Buffer.from(fileData, 'base64');
 
     const params = {
       Bucket: process.env.WASABI_BUCKET_NAME,
       Key: `uploads/${Date.now()}_${fileName}`,
       Body: buffer,
-      ContentType: fileType
+      ContentType: fileType || 'application/octet-stream',
+      ACL: 'public-read'
     };
 
+    console.log('S3 ga yuklash boshlandi...');
     const result = await s3.upload(params).promise();
+    console.log('S3 ga yuklash muvaffaqiyatli:', result.Location);
 
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      },
+      headers,
       body: JSON.stringify({
         success: true,
         message: 'Fayl muvaffaqiyatli yuklandi!',
-        url: result.Location
+        url: result.Location,
+        fileName: fileName
       })
     };
 
@@ -50,13 +91,11 @@ exports.handler = async (event) => {
     console.error('Xato:', error);
     return {
       statusCode: 500,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type'
-      },
+      headers,
       body: JSON.stringify({ 
         error: 'Yuklash muvaffaqiyatsiz', 
-        details: error.message 
+        details: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       })
     };
   }
