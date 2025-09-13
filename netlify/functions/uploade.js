@@ -14,7 +14,7 @@ exports.handler = async (event) => {
 
     const params = {
       Bucket: process.env.WASABI_BUCKET_NAME,
-      Key: `uploads/${Date.now()}-${fileName}`,
+      Key: `uploads/${fileName}`,
       Expires: 60,
       ACL: "public-read",
       ContentType: "application/octet-stream",
