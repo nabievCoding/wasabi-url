@@ -22,7 +22,6 @@ exports.handler = async (event) => {
     };
   }
 
-  // Wasabi sozlamalari
   const s3 = new AWS.S3({
     endpoint: 'https://s3.ap-southeast-1.wasabisys.com',
     accessKeyId: process.env.WASABI_ACCESS_KEY,
@@ -32,6 +31,7 @@ exports.handler = async (event) => {
 
   return await new Promise((resolve) => {
     const form = new multiparty.Form();
+
     form.parse(event, async (err, fields, files) => {
       if (err) {
         return resolve({
