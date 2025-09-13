@@ -1,44 +1,39 @@
-const { S3Client, PutObjectCommand } = require("@aws-sdk/client-s3");
-const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
+const AWS = require("aws-sdk");
 
-const s3 = new S3Client({
-  region: "ap-southeast-1",
+const s3 = new AWS.S3({
   endpoint: "https://s3.ap-southeast-1.wasabisys.com",
-  credentials: {
-    accessKeyId: process.env.WASABI_ACCESS_KEY,
-    secretAccessKey: process.env.WASABI_SECRET_KEY,
-  },
+  region: "ap-southeast-1",
+  accessKeyId: process.env.WASABI_ACCESS_KEY,
+  secretAccessKey: process.env.WASABI_SECRET_KEY,
+  signatureVersion: "v4",
 });
 
 exports.handler = async (event) => {
   try {
     const { fileName } = event.queryStringParameters;
 
-    if (!fileName) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({
-          success: false,
-          error: "fileName kerak",
-        }),
-      };
-    }
-
-    const key = `uploads/${fileName}`;
-
-    const command = new PutObjectCommand({
+    const params = {
       Bucket: process.env.WASABI_BUCKET_NAME,
-      Key: key,
-      ACL: "public-read", // ommaga ochiq qilib qo‘yadi
+      Key: `uploads/${fileName}`,
+      Expires: 60,
+      ACL: "public-read",
       ContentType: "application/octet-stream",
-    });
+    };
 
-    // 60 soniya amal qiladigan upload URL
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 60 });
+    const uploadUrl = await s3.getSignedUrlPromise("putObject", params);
 
     return {
       statusCode: 200,
       body: JSON.stringify({
         success: true,
         uploadUrl,
-        fileUrl: `https://${process.env.WASABI_BUCKET_NAME}.s
+        fileUrl: `https://${process.env.WASABI_BUCKET_NAME}.s3.ap-southeast-1.wasabisys.com/${params.Key}`,
+      }),
+    };
+  } catch (err) {
+    return {
+      statusCode: 500,
+      body: JSON.stringify({ success: false, error: err.message }),
+    };
+  }
+};
