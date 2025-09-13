@@ -1,6 +1,7 @@
-const AWS = require("aws-sdk");
+const { S3Client, GetObjectCommand } = require("@aws-sdk/client-s3");
+const { getSignedUrl } = require("@aws-sdk/s3-request-presigner");
 
-const s3 = new AWS.S3({
+const s3 = new S3Client({
   endpoint: "https://s3.ap-southeast-1.wasabisys.com",
   region: "ap-southeast-1",
   accessKeyId: process.env.WASABI_ACCESS_KEY,
