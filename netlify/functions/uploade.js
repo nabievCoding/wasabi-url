@@ -32,10 +32,10 @@ exports.handler = async (event, context) => {
 
     // Wasabi sozlamalari
     const s3 = new AWS.S3({
-      endpoint: 'https://s3.ap-northeast-2.wasabisys.com',
+      endpoint: 'https://s3.ap-southeast-1.wasabisys.com',
       accessKeyId: process.env.WASABI_ACCESS_KEY,
       secretAccessKey: process.env.WASABI_SECRET_KEY,
-      region: process.env.WASABI_REGION || 'ap-northeast-2'
+      region: process.env.WASABI_REGION || 'ap-southeast-1'
     });
 
     // JSON ma'lumotlarini o'qish
