@@ -11,6 +11,6 @@
   "license": "ISC",
   "type": "commonjs",
   "dependencies": {
-"aws-sdk"
+  "aws-sdk": "^2.1692.0"
 }
 }
