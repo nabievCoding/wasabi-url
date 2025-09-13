@@ -15,8 +15,8 @@ exports.handler = async () => {
       secretAccessKey: process.env.WASABI_SECRET_KEY,
       region: process.env.WASABI_REGION || "ap-southeast-1",
     });
-
-    const fileName = `uploads/${Date.now()}.bin`; // yoki frontend’dan nom berishingiz mumkin
+    const { fname } = event.queryStringParameters || {};
+    const fileName = `uploads/${Date.now()}-${fname}`; // yoki frontend’dan nom berishingiz mumkin
 
     const params = {
       Bucket: process.env.WASABI_BUCKET_NAME,
