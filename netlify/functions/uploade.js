@@ -12,10 +12,17 @@ exports.handler = async (event) => {
   try {
     const { fileName } = event.queryStringParameters;
 
+    if (!fileName) {
+      return {
+        statusCode: 400,
+        body: JSON.stringify({ success: false, error: "fileName required" }),
+      };
+    }
+
     const params = {
       Bucket: process.env.WASABI_BUCKET_NAME,
       Key: `uploads/${fileName}`,
-      Expires: 60,
+      Expires: 60, // URL muddati (sekund)
       ACL: "public-read",
       ContentType: "application/octet-stream",
     };
