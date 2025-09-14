@@ -32,13 +32,20 @@ export async function handler(event) {
 
     return {
       statusCode: 200,
-      body: JSON.stringify({ downloadUrl }),
+      headers: {
+        "Access-Control-Allow-Origin": "*",   // ✅ hamma domainlarga ruxsat
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      },
+      body: JSON.stringify({ url: downloadUrl }),
     };
   } catch (err) {
-    console.error("Download error:", err);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: "Download link yaratishda xato" }),
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
+      body: JSON.stringify({ error: err.message }),
     };
   }
 }
