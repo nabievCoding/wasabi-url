@@ -9,24 +9,34 @@ const s3 = new AWS.S3({
 });
 
 exports.handler = async (event) => {
+  // OPTIONS uchun CORS preflight
+  if (event.httpMethod === "OPTIONS") {
+    return {
+      statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      },
+      body: "",
+    };
+  }
+
   try {
     const { fileName } = event.queryStringParameters || {};
-
     if (!fileName) {
       return {
         statusCode: 400,
-        headers: {
-          "Access-Control-Allow-Origin": "*",
-        },
+        headers: { "Access-Control-Allow-Origin": "*" },
         body: JSON.stringify({ success: false, error: "fileName required" }),
       };
     }
 
     const params = {
       Bucket: process.env.WASABI_BUCKET_NAME,
-      Key: `uploads/${fileName}`,          // Bucket ichidagi yo'l
-      Expires: 60,                         // URL amal qilish muddati (sekundlarda)
-      ContentType: "application/octet-stream", // Fayl turi
+      Key: `uploads/${fileName}`,
+      Expires: 300, // 5 daqiqa ishlaydigan URL
+      ContentType: "application/octet-stream",
     };
 
     const uploadUrl = await s3.getSignedUrlPromise("putObject", params);
@@ -35,22 +45,16 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
-        "Access-Control-Allow-Origin": "*",   // CORS uchun
+        "Access-Control-Allow-Origin": "*",
         "Access-Control-Allow-Headers": "Content-Type",
         "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
       },
-      body: JSON.stringify({
-        success: true,
-        uploadUrl,
-        fileUrl,
-      }),
+      body: JSON.stringify({ success: true, uploadUrl, fileUrl }),
     };
   } catch (err) {
     return {
       statusCode: 500,
-      headers: {
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: { "Access-Control-Allow-Origin": "*" },
       body: JSON.stringify({ success: false, error: err.message }),
     };
   }
