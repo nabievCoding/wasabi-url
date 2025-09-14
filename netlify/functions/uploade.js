@@ -10,36 +10,47 @@ const s3 = new AWS.S3({
 
 exports.handler = async (event) => {
   try {
-    const { fileName } = event.queryStringParameters;
+    const { fileName } = event.queryStringParameters || {};
 
     if (!fileName) {
       return {
         statusCode: 400,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
         body: JSON.stringify({ success: false, error: "fileName required" }),
       };
     }
 
     const params = {
       Bucket: process.env.WASABI_BUCKET_NAME,
-      Key: `uploads/${fileName}`,
-      Expires: 60, // URL muddati (sekund)
-      ACL: "public-read",
-      ContentType: "application/octet-stream",
+      Key: `uploads/${fileName}`,          // Bucket ichidagi yo'l
+      Expires: 60,                         // URL amal qilish muddati (sekundlarda)
+      ContentType: "application/octet-stream", // Fayl turi
     };
 
     const uploadUrl = await s3.getSignedUrlPromise("putObject", params);
+    const fileUrl = `https://${process.env.WASABI_BUCKET_NAME}.s3.ap-southeast-1.wasabisys.com/${params.Key}`;
 
     return {
       statusCode: 200,
+      headers: {
+        "Access-Control-Allow-Origin": "*",   // CORS uchun
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+      },
       body: JSON.stringify({
         success: true,
         uploadUrl,
-        fileUrl: `https://${process.env.WASABI_BUCKET_NAME}.s3.ap-southeast-1.wasabisys.com/${params.Key}`,
+        fileUrl,
       }),
     };
   } catch (err) {
     return {
       statusCode: 500,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+      },
       body: JSON.stringify({ success: false, error: err.message }),
     };
   }
